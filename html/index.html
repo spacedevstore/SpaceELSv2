@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELS HUD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="els-container" class="els-container" style="display: none;">
+        <div id="els-window" class="els-card">
+            
+            <div class="card-header" id="window-header">
+                <div class="header-info">
+                    <div class="status-indicator"></div>
+                    <span id="veh-model-name" class="veh-title">CRUISER</span>
+                    <span id="veh-seat-name" class="seat-tag">Driver</span>
+                </div>
+                <button class="close-btn" id="btn-close" title="Close (ESC / U)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="stages-segment">
+                <button class="seg-btn active" data-stage="0" id="stage-btn-0">OFF</button>
+                <button class="seg-btn" data-stage="1" id="stage-btn-1">STG 1</button>
+                <button class="seg-btn" data-stage="2" id="stage-btn-2">STG 2</button>
+                <button class="seg-btn" data-stage="3" id="stage-btn-3">CODE 3</button>
+            </div>
+
+            <div class="core-controls">
+                <button class="core-btn siren-main-btn" id="btn-master-siren">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>SIREN</span>
+                </button>
+                
+                <button class="core-btn tone-switch-btn" id="btn-cycle-tone" title="Switch Siren Sound (Wail / Yelp / Priority / Hi-Lo)">
+                    <i class="fa-solid fa-music"></i>
+                    <span id="lbl-current-tone">WAIL</span>
+                </button>
+
+                <button class="core-btn mute-btn" id="btn-siren-mute">
+                    <i class="fa-solid fa-volume-xmark"></i>
+                    <span>SILENT</span>
+                </button>
+
+                <button class="core-btn horn-btn" id="btn-airhorn">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span>HORN</span>
+                </button>
+            </div>
+
+            <div class="card-footer">
+                <span><kbd>U</kbd> or <kbd>ESC</kbd> to hide</span>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="builder-container" class="builder-screen-layout" style="display: none;">
+        
+        <div class="b-top-bar">
+            <div class="b-top-left">
+                <div class="b-brand-badge"><i class="fa-solid fa-sliders"></i> ELS STUDIO</div>
+                <div class="b-model-tag">VEHICLE: <span id="builder-model-name" class="highlight-model">POLICE</span></div>
+            </div>
+
+            <div class="b-top-tabs" id="studio-top-tabs">
+                <button class="b-tab add-stage-tab-btn" id="btn-add-new-stage"><i class="fa-solid fa-plus"></i> ADD STAGE</button>
+                <button class="b-tab" data-btab="keybinds"><i class="fa-solid fa-keyboard"></i> KEYBINDS</button>
+            </div>
+
+            <button class="close-btn" id="builder-btn-close" title="Close Studio (ESC / U)"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="b-left-dock">
+            <div class="dock-panel">
+                
+                <div class="b-tab-pane active" id="pane-empty-stages" style="display: none;">
+                    <div class="pane-header"><i class="fa-solid fa-circle-info"></i> NO STAGES CONFIGURED</div>
+                    <div class="pane-desc" style="margin-top: 10px; line-height: 1.6;">
+                        This vehicle currently has no active stages. All emergency lights are OFF.<br><br>
+                        Click <b>[+ ADD STAGE]</b> on the top bar to create Stage 1, Stage 2, or Stage 3.
+                    </div>
+                    <button class="b-action-btn primary" id="btn-create-first-stage" style="margin-top: 15px; width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-plus"></i> ADD FIRST STAGE
+                    </button>
+                </div>
+
+                <div class="b-tab-pane" id="pane-stage1">
+                    <div class="pane-header">
+                        <span><i class="fa-solid fa-arrows-left-right"></i> STAGE 1 CONFIGURATION</span>
+                        <button class="stage-del-btn" data-delstg="1" title="Delete Stage 1"><i class="fa-solid fa-trash-can"></i> REMOVE</button>
+                    </div>
+
+                    <div class="speed-row">
+                        <div class="speed-row-header">
+                            <label><i class="fa-solid fa-gauge-high"></i> FLASH CADENCE / DELAY</label>
+                            <span id="stg1-speed-val" class="speed-val-badge">180ms</span>
+                        </div>
+                        <input type="range" id="stg1-speed-slider" min="50" max="700" step="10" value="180">
+                    </div>
+
+                    <div class="field-label mt-10"><i class="fa-solid fa-wand-magic-sparkles"></i> REALTIME ENVIRONMENT LIGHT GLOW:</div>
+                    <div class="env-config-box">
+                        <div class="env-color-col" style="margin-bottom: 6px;">
+                            <label><i class="fa-solid fa-location-dot"></i> Glow Position / Coverage:</label>
+                            <select class="builder-select env-pos-select" id="stg1-env-pos">
+                                <option value="rear">Rear Traffic Advisor (Behind Vehicle)</option>
+                                <option value="front">Front Lightbar (In Front of Vehicle)</option>
+                                <option value="both">All-Round 360° (Front & Rear Glow)</option>
+                                <option value="roof">Side Alternating (Left/Right Strobes)</option>
+                            </select>
+                        </div>
+                        <div class="env-color-grid">
+                            <div class="env-color-col">
+                                <label>Phase A Color:</label>
+                                <select class="builder-select env-color-select" id="stg1-env-color-a">
+                                    <option value="amber">Amber / Orange (Default)</option>
+                                    <option value="red">Emergency Red</option>
+                                    <option value="blue">Emergency Blue</option>
+                                    <option value="white">Bright White</option>
+                                    <option value="green">Emerald Green</option>
+                                    <option value="none">Disabled (No Glow)</option>
+                                </select>
+                            </div>
+                            <div class="env-color-col">
+                                <label>Phase B Color:</label>
+                                <select class="builder-select env-color-select" id="stg1-env-color-b">
+                                    <option value="amber">Amber / Orange (Default)</option>
+                                    <option value="red">Emergency Red</option>
+                                    <option value="blue">Emergency Blue</option>
+                                    <option value="white">Bright White</option>
+                                    <option value="green">Emerald Green</option>
+                                    <option value="none">Disabled (No Glow)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-label mt-10">PHASE A (LEFT / PRIMARY):</div>
+                    <div class="b-extras-picker" id="stg1-phaseA-picker"></div>
+                    <div class="field-label mt-10">PHASE B (RIGHT / SECONDARY):</div>
+                    <div class="b-extras-picker" id="stg1-phaseB-picker"></div>
+                    <div class="field-label mt-10">STEADY BURN (ALWAYS ON):</div>
+                    <div class="b-extras-picker" id="stg1-steady-picker"></div>
+                </div>
+
+                <div class="b-tab-pane" id="pane-stage2">
+                    <div class="pane-header">
+                        <span><i class="fa-solid fa-shield-halved"></i> STAGE 2 CONFIGURATION</span>
+                        <button class="stage-del-btn" data-delstg="2" title="Delete Stage 2"><i class="fa-solid fa-trash-can"></i> REMOVE</button>
+                    </div>
+
+                    <div class="speed-row">
+                        <div class="speed-row-header">
+                            <label><i class="fa-solid fa-gauge-high"></i> FLASH CADENCE / DELAY</label>
+                            <span id="stg2-speed-val" class="speed-val-badge">120ms</span>
+                        </div>
+                        <input type="range" id="stg2-speed-slider" min="50" max="700" step="10" value="120">
+                    </div>
+
+                    <div class="field-label mt-10"><i class="fa-solid fa-wand-magic-sparkles"></i> REALTIME ENVIRONMENT LIGHT GLOW:</div>
+                    <div class="env-config-box">
+                        <div class="env-color-col" style="margin-bottom: 6px;">
+                            <label><i class="fa-solid fa-location-dot"></i> Glow Position / Coverage:</label>
+                            <select class="builder-select env-pos-select" id="stg2-env-pos">
+                                <option value="roof">Side Alternating (Left/Right Roof)</option>
+                                <option value="both">All-Round 360° (Front & Rear Glow)</option>
+                                <option value="front">Front Lightbar (In Front of Vehicle)</option>
+                                <option value="rear">Rear Lightbar (Behind Vehicle)</option>
+                            </select>
+                        </div>
+                        <div class="env-color-grid">
+                            <div class="env-color-col">
+                                <label>Phase A Color:</label>
+                                <select class="builder-select env-color-select" id="stg2-env-color-a">
+                                    <option value="red">Emergency Red</option>
+                                    <option value="blue">Emergency Blue</option>
+                                    <option value="amber">Amber / Orange</option>
+                                    <option value="white">Bright White</option>
+                                    <option value="green">Emerald Green</option>
+                                    <option value="none">Disabled (No Glow)</option>
+                                </select>
+                            </div>
+                            <div class="env-color-col">
+                                <label>Phase B Color:</label>
+                                <select class="builder-select env-color-select" id="stg2-env-color-b">
+                                    <option value="blue">Emergency Blue</option>
+                                    <option value="red">Emergency Red</option>
+                                    <option value="amber">Amber / Orange</option>
+                                    <option value="white">Bright White</option>
+                                    <option value="green">Emerald Green</option>
+                                    <option value="none">Disabled (No Glow)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-label mt-10">PHASE A (LEFT / PRIMARY):</div>
+                    <div class="b-extras-picker" id="stg2-phaseA-picker"></div>
+                    <div class="field-label mt-10">PHASE B (RIGHT / SECONDARY):</div>
+                    <div class="b-extras-picker" id="stg2-phaseB-picker"></div>
+                    <div class="field-label mt-10">STEADY BURN (ALWAYS ON):</div>
+                    <div class="b-extras-picker" id="stg2-steady-picker"></div>
+                </div>
+
+                <div class="b-tab-pane" id="pane-stage3">
+                    <div class="pane-header">
+                        <span><i class="fa-solid fa-bolt"></i> STAGE 3 (CODE 3)</span>
+                        <button class="stage-del-btn" data-delstg="3" title="Delete Stage 3"><i class="fa-solid fa-trash-can"></i> REMOVE</button>
+                    </div>
+
+                    <div class="speed-row">
+                        <div class="speed-row-header">
+                            <label><i class="fa-solid fa-gauge-high"></i> FLASH CADENCE / DELAY</label>
+                            <span id="stg3-speed-val" class="speed-val-badge">80ms</span>
+                        </div>
+                        <input type="range" id="stg3-speed-slider" min="50" max="700" step="10" value="80">
+                    </div>
+
+                    <div class="field-label mt-10"><i class="fa-solid fa-wand-magic-sparkles"></i> REALTIME ENVIRONMENT LIGHT GLOW:</div>
+                    <div class="env-config-box">
+                        <div class="env-color-col" style="margin-bottom: 6px;">
+                            <label><i class="fa-solid fa-location-dot"></i> Glow Position / Coverage:</label>
+                            <select class="builder-select env-pos-select" id="stg3-env-pos">
+                                <option value="both">All-Round 360° (Full Surround Reflections)</option>
+                                <option value="roof">Side Alternating (Left/Right Roof)</option>
+                                <option value="front">Front Lightbar (In Front of Vehicle)</option>
+                                <option value="rear">Rear Lightbar (Behind Vehicle)</option>
+                            </select>
+                        </div>
+                        <div class="env-color-grid">
+                            <div class="env-color-col">
+                                <label>Phase A Color:</label>
+                                <select class="builder-select env-color-select" id="stg3-env-color-a">
+                                    <option value="red">Emergency Red</option>
+                                    <option value="blue">Emergency Blue</option>
+                                    <option value="amber">Amber / Orange</option>
+                                    <option value="white">Bright White</option>
+                                    <option value="green">Emerald Green</option>
+                                    <option value="none">Disabled (No Glow)</option>
+                                </select>
+                            </div>
+                            <div class="env-color-col">
+                                <label>Phase B Color:</label>
+                                <select class="builder-select env-color-select" id="stg3-env-color-b">
+                                    <option value="blue">Emergency Blue</option>
+                                    <option value="red">Emergency Red</option>
+                                    <option value="amber">Amber / Orange</option>
+                                    <option value="white">Bright White</option>
+                                    <option value="green">Emerald Green</option>
+                                    <option value="none">Disabled (No Glow)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-label mt-10">PRIMARY FLASHERS (PHASE A):</div>
+                    <div class="b-extras-picker" id="stg3-phaseA-picker"></div>
+                    <div class="field-label mt-10">SECONDARY FLASHERS (PHASE B):</div>
+                    <div class="b-extras-picker" id="stg3-phaseB-picker"></div>
+                    <div class="field-label mt-10">STEADY BURN (ALWAYS ON):</div>
+                    <div class="b-extras-picker" id="stg3-steady-picker"></div>
+                </div>
+
+                <div class="b-tab-pane" id="pane-keybinds">
+                    <div class="pane-header"><i class="fa-solid fa-keyboard"></i> CUSTOM IN-GAME KEYBINDINGS</div>
+                    <div class="pane-desc">Click any button below, then press any key on your keyboard to instantly rebind!</div>
+                    <div class="keybinds-form">
+                        <div class="keybind-row">
+                            <label><i class="fa-solid fa-lightbulb"></i> Stage Switch (OFF -> Stages -> OFF):</label>
+                            <button class="key-recorder-btn" id="kb-btn-stage" data-action="stageKey">J</button>
+                        </div>
+                        <div class="keybind-row">
+                            <label><i class="fa-solid fa-bullhorn"></i> Siren Switch (Wail -> Yelp -> Priority -> Hi-Lo -> OFF):</label>
+                            <button class="key-recorder-btn" id="kb-btn-siren" data-action="sirenKey">R</button>
+                        </div>
+                        <div class="keybind-row">
+                            <label><i class="fa-solid fa-volume-high"></i> Airhorn Blast (Hold):</label>
+                            <button class="key-recorder-btn" id="kb-btn-horn" data-action="hornKey">E</button>
+                        </div>
+                        <div class="keybind-row">
+                            <label><i class="fa-solid fa-sliders"></i> Open ELS Control Panel:</label>
+                            <button class="key-recorder-btn" id="kb-btn-ui" data-action="uiKey">U</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="b-right-dock">
+            
+            <div class="dock-panel">
+                <div class="pane-header"><i class="fa-solid fa-camera-rotate"></i> 360° CAM ORBIT</div>
+                <div class="cam-pad-grid">
+                    <button class="cam-btn" id="cam-preset-top"><i class="fa-solid fa-cloud"></i> TOP</button>
+                    <button class="cam-btn" id="cam-preset-front"><i class="fa-solid fa-car"></i> FRONT</button>
+                    <button class="cam-btn" id="cam-preset-back"><i class="fa-solid fa-car-rear"></i> REAR</button>
+                    <button class="cam-btn" id="cam-preset-left"><i class="fa-solid fa-arrow-left"></i> LEFT</button>
+                    <button class="cam-btn" id="cam-preset-right"><i class="fa-solid fa-arrow-right"></i> RIGHT</button>
+                </div>
+                <div class="cam-rot-row">
+                    <button class="cam-rot-btn" id="cam-rot-ccw"><i class="fa-solid fa-rotate-left"></i> -45°</button>
+                    <button class="cam-rot-btn" id="cam-rot-cw"><i class="fa-solid fa-rotate-right"></i> +45°</button>
+                </div>
+            </div>
+
+            <div class="dock-panel mt-10">
+                <div class="pane-header"><i class="fa-solid fa-magnifying-glass"></i> SOLO INSPECTOR</div>
+                <div class="inspector-grid" id="builder-inspector-grid"></div>
+            </div>
+
+            <div class="dock-panel mt-10">
+                <div class="pane-header"><i class="fa-solid fa-play"></i> LIVE PREVIEW</div>
+                <div class="test-btn-group">
+                    <button class="test-btn" id="btn-test-stg1">TEST STG 1</button>
+                    <button class="test-btn" id="btn-test-stg2">TEST STG 2</button>
+                    <button class="test-btn" id="btn-test-stg3">TEST CODE 3</button>
+                    <button class="test-btn danger" id="btn-test-stop"><i class="fa-solid fa-stop"></i> STOP TEST</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="b-bottom-bar">
+            <div class="builder-status-text" id="builder-status-text">Vehicle profile ready. Center viewport clear.</div>
+            <div class="builder-actions">
+                <button class="b-action-btn danger" id="builder-btn-reset"><i class="fa-solid fa-rotate-left"></i> Reset Defaults</button>
+                <button class="b-action-btn primary" id="builder-btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Vehicle Profile</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
