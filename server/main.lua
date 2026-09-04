@@ -24,20 +24,41 @@ local function IsPlayerAuthorized(src)
         return true
     end
 
-    local requiredPerm = (Config.ELS and Config.ELS.AdminPermission) or 'admin'
-    if IsPlayerAceAllowed(src, 'command') or IsPlayerAceAllowed(src, requiredPerm) or IsPlayerAceAllowed(src, 'spaceels.admin') then
-        return true
+    local adminIds = Config.ELS.AdminIdentifiers or {}
+    if #adminIds > 0 then
+        local playerIds = GetPlayerIdentifiers(src)
+        for _, pid in ipairs(playerIds) do
+            local pidLower = string.lower(pid)
+            for _, allowedId in ipairs(adminIds) do
+                if pidLower == string.lower(allowedId) then
+                    return true
+                end
+            end
+        end
     end
 
-    if GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        if QBCore and QBCore.Functions then
-            return QBCore.Functions.HasPermission(src, requiredPerm) or QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
+    local requiredPerm = Config.ELS.AdminPermission
+    if requiredPerm and requiredPerm ~= '' then
+        if IsPlayerAceAllowed(src, requiredPerm) or IsPlayerAceAllowed(src, 'spaceels.admin') then
+            return true
         end
     end
 
     return false
 end
+
+RegisterNetEvent('SpaceELS:server:checkBuilderAccess', function()
+    local src = source
+    if IsPlayerAuthorized(src) then
+        TriggerClientEvent('SpaceELS:client:openBuilderAuthorized', src)
+    else
+        TriggerClientEvent('chat:addMessage', src, {
+            color = { 255, 60, 60 },
+            multiline = true,
+            args = { 'SpaceELS', 'You do not have permission to access the ELS Studio menu.' }
+        })
+    end
+end)
 
 local function ValidateVehicleEntity(src, netId)
     if not netId or type(netId) ~= 'number' then return false end

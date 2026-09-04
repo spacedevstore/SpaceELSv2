@@ -99,6 +99,25 @@ local function GetProfileForVehicle(veh)
     return nil
 end
 
+local function IsNonELSVehicle(veh)
+    if not veh or veh == 0 or not DoesEntityExist(veh) then return false end
+    local modelHash = GetEntityModel(veh)
+    local rawName = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
+
+    if Config and Config.ELS and Config.ELS.NonELSVehicles then
+        if Config.ELS.NonELSVehicles[rawName] or Config.ELS.NonELSVehicles[modelHash] then
+            return true
+        end
+    end
+    return false
+end
+
+local function IsVehicleELS(veh)
+    if not veh or veh == 0 or not DoesEntityExist(veh) then return false end
+    if IsNonELSVehicle(veh) then return false end
+    return GetProfileForVehicle(veh) ~= nil
+end
+
 local function GetVehicleELSData(veh)
     if not veh or veh == 0 or not DoesEntityExist(veh) then return nil end
     if not trackedVehicles[veh] then
@@ -137,7 +156,7 @@ local function SetupVehicleStageData(veh, data, stageNum, customProfile)
     data.lastStepTime = 0
     data.extrasState = {}
 
-    if stageNum == 0 then
+    if stageNum == 0 or not IsVehicleELS(veh) then
         data.steady = {}
         data.phaseA = {}
         data.phaseB = {}
@@ -316,7 +335,7 @@ local function ApplyVehicleSound(veh, sirenOn, muted, tone, directSoundBank)
         SetVehicleHasMutedSirens(veh, true)
         StopVehicleSirenSound(veh)
     else
-        if data.stage == 0 then
+        if data.stage == 0 or not IsVehicleELS(veh) then
             SetVehicleSiren(veh, false)
         end
         SetVehicleHasMutedSirens(veh, true)
@@ -562,6 +581,7 @@ CreateThread(function()
 end)
 
 local function ResetStageExtras(veh, data)
+    if not IsVehicleELS(veh) then return end
     data.extrasState = {}
     if data.existingExtras then
         for i = 1, 12 do
@@ -575,6 +595,7 @@ end
 local function SetLightStage(stageNum)
     local veh = GetTargetVehicle()
     if veh == 0 or not DoesEntityExist(veh) then return end
+    if not IsVehicleELS(veh) then return end
 
     local data = GetVehicleELSData(veh)
     stageNum = tonumber(stageNum) or 0
@@ -678,7 +699,7 @@ local function ToggleSirenAudio(enable)
 
     if data.sirenOn then
         data.sirenMuted = false
-        if data.stage == 0 then
+        if data.stage == 0 and IsVehicleELS(veh) then
             SetLightStage(3)
         else
             ApplyVehicleSound(veh, true, false, data.sirenTone)
@@ -686,8 +707,9 @@ local function ToggleSirenAudio(enable)
         end
     else
         data.sirenMuted = true
-        ApplyVehicleSound(veh, data.stage > 0, true)
-        TriggerServerEvent('SpaceELS:server:syncSirenState', netId, data.stage > 0, true)
+        local keepLights = IsVehicleELS(veh) and (data.stage > 0) or false
+        ApplyVehicleSound(veh, keepLights, true)
+        TriggerServerEvent('SpaceELS:server:syncSirenState', netId, keepLights, true)
     end
 
     SendNUIMessage({
@@ -766,6 +788,7 @@ end
 local function OpenELSUI()
     local veh = GetTargetVehicle()
     if veh == 0 or not DoesEntityExist(veh) then return end
+    if not IsVehicleELS(veh) then return end
 
     isUIOpen = true
     SetNuiFocus(true, true)
@@ -791,6 +814,7 @@ end
 local function OpenControlELS()
     local veh = GetTargetVehicle()
     if veh == 0 or not DoesEntityExist(veh) then return end
+    if IsNonELSVehicle(veh) then return end
 
     local modelHash = GetEntityModel(veh)
     local rawModel = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
@@ -814,6 +838,19 @@ local function OpenControlELS()
         }
     })
 end
+
+local function RequestOpenControlELS()
+    if not isInVehicle or isBuilderOpen then return end
+    local veh = GetTargetVehicle()
+    if veh == 0 or not DoesEntityExist(veh) then return end
+    if IsNonELSVehicle(veh) then return end
+
+    TriggerServerEvent('SpaceELS:server:checkBuilderAccess')
+end
+
+RegisterNetEvent('SpaceELS:client:openBuilderAuthorized', function()
+    OpenControlELS()
+end)
 
 local function CloseControlELS()
     if not isBuilderOpen then return end
@@ -1034,6 +1071,7 @@ local function HandleKeyStage()
     if not isInVehicle or isUIOpen or isBuilderOpen then return end
     local veh = GetTargetVehicle()
     if veh == 0 or not DoesEntityExist(veh) then return end
+    if not IsVehicleELS(veh) then return end
     local data = GetVehicleELSData(veh)
     local current = data.stage or 0
 
@@ -1067,6 +1105,7 @@ local function HandleKeySiren()
     local veh = GetTargetVehicle()
     if veh == 0 or not DoesEntityExist(veh) then return end
     local data = GetVehicleELSData(veh)
+    local isELS = IsVehicleELS(veh)
 
     local tones = { "wail", "yelp", "priority", "hilo" }
 
@@ -1095,9 +1134,10 @@ local function HandleKeySiren()
             data.sirenOn = false
             data.sirenMuted = true
             PlaySoundFrontend(-1, "CANCEL", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
-            ApplyVehicleSound(veh, data.stage > 0, true)
+            local keepLights = isELS and (data.stage > 0) or false
+            ApplyVehicleSound(veh, keepLights, true)
             local netId = NetworkGetNetworkIdFromEntity(veh)
-            TriggerServerEvent('SpaceELS:server:syncSirenState', netId, data.stage > 0, true)
+            TriggerServerEvent('SpaceELS:server:syncSirenState', netId, keepLights, true)
         end
     end
 
@@ -1126,11 +1166,11 @@ if elsCmdAlias and elsCmdAlias ~= '' and elsCmdAlias ~= elsCmd then
     end, false)
 end
 
-RegisterCommand(studioCmd, function() OpenControlELS() end, false)
+RegisterCommand(studioCmd, function() RequestOpenControlELS() end, false)
 if studioCmdAlias and studioCmdAlias ~= '' and studioCmdAlias ~= studioCmd then
-    RegisterCommand(studioCmdAlias, function() OpenControlELS() end, false)
+    RegisterCommand(studioCmdAlias, function() RequestOpenControlELS() end, false)
 end
-RegisterCommand('elsprofile', function() OpenControlELS() end, false)
+RegisterCommand('elsprofile', function() RequestOpenControlELS() end, false)
 
 RegisterCommand('els_stage', function() HandleKeyStage() end, false)
 RegisterCommand('els_siren', function() HandleKeySiren() end, false)
