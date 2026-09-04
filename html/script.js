@@ -335,20 +335,7 @@ function openBuilderUI(data) {
         }
     }
 
-    if (!workingProfile.keybinds) {
-        workingProfile.keybinds = {
-            stageKey: "J",
-            sirenKey: "R",
-            hornKey: "E",
-            uiKey: "U"
-        };
-    }
 
-    const kbMap = workingProfile.keybinds || {};
-    document.querySelectorAll('.key-recorder-btn').forEach(btn => {
-        const act = btn.getAttribute('data-action');
-        btn.textContent = (kbMap[act] || 'NONE').toUpperCase();
-    });
 
     builderStatusText.textContent = `Vehicle [${currentEditingModel.toUpperCase()}]. Installed Extras: ${vehicleInstalledExtras.join(', ') || 'None'}`;
     renderInspectorGrid();
@@ -465,37 +452,7 @@ function closeBuilderUI() {
     postNUI('closeBuilder');
 }
 
-let activeRecordingButton = null;
 
-document.querySelectorAll('.key-recorder-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (activeRecordingButton) {
-            activeRecordingButton.classList.remove('recording');
-        }
-        activeRecordingButton = btn;
-        btn.classList.add('recording');
-        btn.textContent = 'PRESS KEY...';
-    });
-});
-
-window.addEventListener('keydown', (e) => {
-    if (!activeRecordingButton) return;
-    e.preventDefault();
-
-    let keyName = e.key.toUpperCase();
-    if (keyName === 'ESCAPE') keyName = 'NONE';
-    if (keyName === ' ') keyName = 'SPACE';
-
-    const action = activeRecordingButton.getAttribute('data-action');
-    if (!workingProfile.keybinds) workingProfile.keybinds = {};
-    workingProfile.keybinds[action] = keyName;
-
-    activeRecordingButton.textContent = keyName;
-    activeRecordingButton.classList.remove('recording');
-    activeRecordingButton = null;
-
-    builderStatusText.textContent = `Keybind updated for [${action}]: ${keyName}`;
-});
 
 function renderInspectorGrid() {
     const grid = document.getElementById('builder-inspector-grid');

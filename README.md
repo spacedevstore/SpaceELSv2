@@ -9,19 +9,23 @@
 - **Optimized Performance:** Low resource usage (0.00ms standard).
 - **Vehicle Profiles:** Easily configure light stages, extras, and siren patterns.
 - **Dynamic Lighting:** Optional 3D environmental & ambient ground reflections.
-- **Interactive UI:** In-game ELS control panel.
-- **Custom Keybinds:** Configurable controls for stages, sirens, horns, and UI.
+- **Interactive UI:** In-game ELS control panel and vehicle setup Studio (`/controlels`).
+- **Configurable Keybinds:** Fully customizable in GTA Settings > Key Bindings > FiveM.
 
 ---
 
 ## 🎮 Default Controls
 
-| Action | Default Key |
-|---|---|
-| **Toggle UI** | `U` |
-| **Cycle Light Stage** | `J` |
-| **Toggle Siren** | `CTRL` |
-| **Manual Horn** | `E` |
+| Action | Command | Default Key |
+|---|---|---|
+| **Toggle ELS UI** | `els` / `elsui` | `U` |
+| **Cycle Light Stage** | `els_stage` | `J` |
+| **Cycle Siren Tones** | `els_siren` | `LCONTROL` |
+| **Airhorn Blast** | `+els_horn` | `E` |
+| **ELS Studio (Vehicle Setup)** | `/controlels` | — |
+
+> 💡 **Custom Keybinds:** Players can easily customize any of these keys in:  
+> **Pause Menu (ESC) ➔ Settings ➔ Key Bindings ➔ FiveM ➔ SpaceELS**
 
 ---
 

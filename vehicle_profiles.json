@@ -1,1 +1,23 @@
-{}
+{
+    "2018 dodge": {
+        "alleyLeft": [],
+        "speed": 75,
+        "labels": [],
+        "alleyRight": [],
+        "takedown": [],
+        "sirenBank": "VEHICLES_HORNS_SIREN_1",
+        "stage1": {
+            "envColors": {
+                "colorB": "amber",
+                "pos": "rear",
+                "colorA": "amber"
+            },
+            "phaseB": [
+                8
+            ],
+            "steady": [],
+            "speed": 180,
+            "phaseA": []
+        }
+    }
+}

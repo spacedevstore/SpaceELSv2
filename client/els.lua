@@ -36,6 +36,9 @@ local preSurgeTone = "wail"
 local plyPed = 0
 local currentVeh = 0
 local isInVehicle = false
+local canControlCurrentVeh = false
+local vehicleModelProfileCache = {}
+local vehicleEmergencyCache = {}
 
 local ENV_COLOR_PALETTES = {
     red   = { r = 210, g = 15,  b = 25 },
@@ -72,20 +75,27 @@ local function EnsureEntityControl(entity)
 end
 
 local function GetProfileForVehicle(veh)
-    if not DoesEntityExist(veh) then return nil end
+    if not veh or veh == 0 or not DoesEntityExist(veh) then return nil end
     local modelHash = GetEntityModel(veh)
+    if vehicleModelProfileCache[modelHash] ~= nil then
+        return vehicleModelProfileCache[modelHash] == false and nil or vehicleModelProfileCache[modelHash]
+    end
+
     local rawName = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
 
     if customVehicleProfiles[rawName] then
+        vehicleModelProfileCache[modelHash] = customVehicleProfiles[rawName]
         return customVehicleProfiles[rawName]
     end
 
     for name, prof in pairs(customVehicleProfiles) do
         local cleanKey = string.lower(tostring(name)):gsub("^%s*(.-)%s*$", "%1")
         if cleanKey == rawName or GetHashKey(cleanKey) == modelHash or GetHashKey(name) == modelHash then
+            vehicleModelProfileCache[modelHash] = prof
             return prof
         end
     end
+    vehicleModelProfileCache[modelHash] = false
     return nil
 end
 
@@ -174,8 +184,22 @@ local function SetupVehicleStageData(veh, data, stageNum, customProfile)
     end
 end
 
+local function IsEmergencyVehicle(veh)
+    if not veh or veh == 0 or not DoesEntityExist(veh) then return false end
+    local modelHash = GetEntityModel(veh)
+    if vehicleEmergencyCache[modelHash] ~= nil then
+        return vehicleEmergencyCache[modelHash]
+    end
+
+    local isEmergency = (GetVehicleClass(veh) == 18) or (GetProfileForVehicle(veh) ~= nil)
+    vehicleEmergencyCache[modelHash] = isEmergency
+    return isEmergency
+end
+
 local function CanPlayerControlELS(veh)
     if not veh or veh == 0 or not DoesEntityExist(veh) then return false end
+    if not IsEmergencyVehicle(veh) then return false end
+
     local allowPassengers = true
     if Config and Config.ELS and Config.ELS.AllowPassengers ~= nil then
         allowPassengers = Config.ELS.AllowPassengers
@@ -188,7 +212,7 @@ end
 
 local function GetTargetVehicle()
     if isInVehicle and currentVeh ~= 0 and DoesEntityExist(currentVeh) then
-        if not CanPlayerControlELS(currentVeh) then return 0 end
+        if not canControlCurrentVeh then return 0 end
         return currentVeh
     end
     local ped = plyPed ~= 0 and plyPed or PlayerPedId()
@@ -196,8 +220,9 @@ local function GetTargetVehicle()
         local veh = GetVehiclePedIsIn(ped, false)
         currentVeh = veh
         isInVehicle = true
+        canControlCurrentVeh = CanPlayerControlELS(veh)
+        if not canControlCurrentVeh then return 0 end
         GetVehicleELSData(veh)
-        if not CanPlayerControlELS(veh) then return 0 end
         return veh
     end
     return 0
@@ -214,10 +239,31 @@ end
 local function StopVehicleSirenSound(veh)
     local data = trackedVehicles[veh]
     if data and data.sirenSoundId and data.sirenSoundId ~= -1 then
-        StopSound(data.sirenSoundId)
-        ReleaseSoundId(data.sirenSoundId)
+        local sId = data.sirenSoundId
         data.sirenSoundId = -1
+        StopSound(sId)
+        ReleaseSoundId(sId)
     end
+end
+
+local function StopVehicleHornSound(veh)
+    local data = trackedVehicles[veh]
+    if data and data.hornSoundId and data.hornSoundId ~= -1 then
+        local hId = data.hornSoundId
+        data.hornSoundId = -1
+        StopSound(hId)
+        ReleaseSoundId(hId)
+    end
+end
+
+local function CleanUpVehicleData(veh)
+    if not veh then return end
+    StopVehicleSirenSound(veh)
+    StopVehicleHornSound(veh)
+    activeEnvVehicles[veh] = nil
+    activeSequencerVehicles[veh] = nil
+    trackedVehicles[veh] = nil
+    isClearingIntersection = false
 end
 
 local function StartVehicleSirenSound(veh, requestedTone, directSoundBank)
@@ -225,7 +271,9 @@ local function StartVehicleSirenSound(veh, requestedTone, directSoundBank)
     if not data or not DoesEntityExist(veh) then return end
 
     StopVehicleSirenSound(veh)
-    data.sirenSoundId = GetSoundId()
+    local newSoundId = GetSoundId()
+    if not newSoundId or newSoundId == -1 then return end
+    data.sirenSoundId = newSoundId
 
     local soundName = directSoundBank
     if not soundName or soundName == "NONE" then
@@ -237,21 +285,15 @@ local function StartVehicleSirenSound(veh, requestedTone, directSoundBank)
     PlaySoundFromEntity(data.sirenSoundId, soundName, veh, 0, 0, 0)
 end
 
-local function StopVehicleHornSound(veh)
-    local data = trackedVehicles[veh]
-    if data and data.hornSoundId and data.hornSoundId ~= -1 then
-        StopSound(data.hornSoundId)
-        ReleaseSoundId(data.hornSoundId)
-        data.hornSoundId = -1
-    end
-end
-
 local function StartVehicleHornSound(veh)
     local data = GetVehicleELSData(veh)
     if not data or not DoesEntityExist(veh) then return end
 
     StopVehicleHornSound(veh)
-    data.hornSoundId = GetSoundId()
+    local newSoundId = GetSoundId()
+    if not newSoundId or newSoundId == -1 then return end
+    data.hornSoundId = newSoundId
+
     PlaySoundFromEntity(data.hornSoundId, "SIRENS_AIRHORN", veh, 0, 0, 0)
 end
 
@@ -466,10 +508,13 @@ CreateThread(function()
                 currentVeh = veh
                 isInVehicle = true
             end
+            canControlCurrentVeh = CanPlayerControlELS(currentVeh)
         else
             if isInVehicle then
                 currentVeh = 0
                 isInVehicle = false
+                canControlCurrentVeh = false
+                isClearingIntersection = false
             end
         end
 
@@ -485,9 +530,30 @@ end)
 
 CreateThread(function()
     while true do
-        if isInVehicle and not isUIOpen and not isBuilderOpen then
-            DisableControlAction(0, 86, true)
-            DisableControlAction(0, 81, true)
+        Wait(5000)
+        for veh, _ in pairs(trackedVehicles) do
+            if not DoesEntityExist(veh) then
+                CleanUpVehicleData(veh)
+            end
+        end
+        for veh, _ in pairs(activeEnvVehicles) do
+            if not DoesEntityExist(veh) then
+                activeEnvVehicles[veh] = nil
+            end
+        end
+        for veh, _ in pairs(activeSequencerVehicles) do
+            if not DoesEntityExist(veh) then
+                activeSequencerVehicles[veh] = nil
+            end
+        end
+    end
+end)
+
+CreateThread(function()
+    while true do
+        if isInVehicle and canControlCurrentVeh and not isUIOpen and not isBuilderOpen then
+            DisableControlAction(0, 86, true) -- Horn
+            DisableControlAction(0, 81, true) -- Next Radio Track
             Wait(0)
         else
             Wait(350)
@@ -582,8 +648,8 @@ local function TriggerAirhorn(startBlast)
                 Wait(4200)
                 if DoesEntityExist(veh) and isClearingIntersection then
                     SetSirenTone(preSurgeTone)
-                    isClearingIntersection = false
                 end
+                isClearingIntersection = false
             end)
         end
         lastHornPressTime = now
@@ -611,10 +677,13 @@ local function ToggleSirenAudio(enable)
     end
 
     if data.sirenOn then
-        if data.stage == 0 then data.stage = 3 end
         data.sirenMuted = false
-        ApplyVehicleSound(veh, true, false)
-        TriggerServerEvent('SpaceELS:server:syncSirenState', netId, true, false)
+        if data.stage == 0 then
+            SetLightStage(3)
+        else
+            ApplyVehicleSound(veh, true, false, data.sirenTone)
+            TriggerServerEvent('SpaceELS:server:syncSirenState', netId, true, false, data.sirenTone)
+        end
     else
         data.sirenMuted = true
         ApplyVehicleSound(veh, data.stage > 0, true)
@@ -866,6 +935,8 @@ RegisterNUICallback('builderSaveProfile', function(data, cb)
     if data.modelName and data.profile then
         local model = string.lower(data.modelName):gsub("^%s*(.-)%s*$", "%1")
         customVehicleProfiles[model] = data.profile
+        vehicleModelProfileCache = {}
+        vehicleEmergencyCache = {}
         TriggerServerEvent('SpaceELS:server:saveVehicleProfile', model, data.profile)
     end
     cb({ ok = true })
@@ -875,6 +946,8 @@ RegisterNUICallback('builderResetProfile', function(data, cb)
     if data.modelName then
         local model = string.lower(data.modelName):gsub("^%s*(.-)%s*$", "%1")
         customVehicleProfiles[model] = nil
+        vehicleModelProfileCache = {}
+        vehicleEmergencyCache = {}
         TriggerServerEvent('SpaceELS:server:resetVehicleProfile', model)
     end
     cb({ ok = true })
@@ -936,6 +1009,8 @@ end)
 RegisterNetEvent('SpaceELS:client:receiveProfiles', function(profiles)
     if profiles and type(profiles) == 'table' then
         customVehicleProfiles = profiles
+        vehicleModelProfileCache = {}
+        vehicleEmergencyCache = {}
     end
 end)
 
@@ -943,6 +1018,8 @@ RegisterNetEvent('SpaceELS:client:updateSingleProfile', function(modelName, prof
     if not modelName then return end
     modelName = string.lower(modelName)
     customVehicleProfiles[modelName] = profileData
+    vehicleModelProfileCache = {}
+    vehicleEmergencyCache = {}
     for veh, data in pairs(trackedVehicles) do
         if DoesEntityExist(veh) then
             data.profile = GetProfileForVehicle(veh)
@@ -1030,18 +1107,29 @@ local function HandleKeySiren()
     })
 end
 
-RegisterCommand('els', function()
+local elsCmd = (Config and Config.ELS and Config.ELS.Command) or 'els'
+local elsCmdAlias = (Config and Config.ELS and Config.ELS.CommandAlias) or 'elsui'
+local studioCmd = (Config and Config.ELS and Config.ELS.StudioCommand) or 'controlels'
+local studioCmdAlias = (Config and Config.ELS and Config.ELS.StudioCommandAlias) or 'elscontrol'
+local defaultKey = (Config and Config.ELS and Config.ELS.DefaultKey) or 'U'
+local keyDesc = (Config and Config.ELS and Config.ELS.KeyDescription) or 'Toggle ELS UI'
+
+RegisterCommand(elsCmd, function()
     if not isInVehicle or isBuilderOpen then return end
     ToggleELSUI()
 end, false)
 
-RegisterCommand('elsui', function()
-    if not isInVehicle or isBuilderOpen then return end
-    ToggleELSUI()
-end, false)
+if elsCmdAlias and elsCmdAlias ~= '' and elsCmdAlias ~= elsCmd then
+    RegisterCommand(elsCmdAlias, function()
+        if not isInVehicle or isBuilderOpen then return end
+        ToggleELSUI()
+    end, false)
+end
 
-RegisterCommand('controlels', function() OpenControlELS() end, false)
-RegisterCommand('elscontrol', function() OpenControlELS() end, false)
+RegisterCommand(studioCmd, function() OpenControlELS() end, false)
+if studioCmdAlias and studioCmdAlias ~= '' and studioCmdAlias ~= studioCmd then
+    RegisterCommand(studioCmdAlias, function() OpenControlELS() end, false)
+end
 RegisterCommand('elsprofile', function() OpenControlELS() end, false)
 
 RegisterCommand('els_stage', function() HandleKeyStage() end, false)
@@ -1057,7 +1145,7 @@ RegisterCommand('-els_horn', function()
     end
 end, false)
 
-RegisterKeyMapping('els', 'Toggle ELS UI', 'keyboard', 'U')
+RegisterKeyMapping(elsCmd, keyDesc, 'keyboard', defaultKey)
 RegisterKeyMapping('els_stage', 'Toggle ELS Stages', 'keyboard', 'J')
 RegisterKeyMapping('els_siren', 'Cycle ELS Siren Tones', 'keyboard', 'LCONTROL')
 RegisterKeyMapping('+els_horn', 'Blast ELS Airhorn', 'keyboard', 'E')

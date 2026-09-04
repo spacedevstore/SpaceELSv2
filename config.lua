@@ -14,5 +14,8 @@ Config.ELS = {
     EnableEnvironmentalLighting = true,
     EnvironmentalLightMaxDistance = 28.0,
 
-    SoundVolume = 0.6 -- Volume scale for NUI switch clicks and interactive panel sounds
+    SoundVolume = 0.6, -- Volume scale for NUI switch clicks and interactive panel sounds
+
+    RequireAdminForBuilder = true, -- If true, only players with admin permissions can save/reset vehicle profiles to disk
+    AdminPermission = 'admin' -- ACE permission (or QBCore admin level) required if RequireAdminForBuilder is true
 }
