@@ -108,6 +108,16 @@ local function IsNonELSVehicle(veh)
         if Config.ELS.NonELSVehicles[rawName] or Config.ELS.NonELSVehicles[modelHash] then
             return true
         end
+
+        -- Check spawn names / custom keys by hash or matching string
+        for name, isNonEls in pairs(Config.ELS.NonELSVehicles) do
+            if isNonEls then
+                local cleanName = string.lower(tostring(name)):gsub("^%s*(.-)%s*$", "%1")
+                if cleanName == rawName or GetHashKey(cleanName) == modelHash or GetHashKey(tostring(name)) == modelHash or tonumber(name) == modelHash then
+                    return true
+                end
+            end
+        end
     end
     return false
 end
