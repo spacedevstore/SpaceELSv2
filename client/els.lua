@@ -39,6 +39,7 @@ local isInVehicle = false
 local canControlCurrentVeh = false
 local vehicleModelProfileCache = {}
 local vehicleEmergencyCache = {}
+local nonELSModelHashMap = nil
 
 local ENV_COLOR_PALETTES = {
     red   = { r = 210, g = 15,  b = 25 },
@@ -99,26 +100,39 @@ local function GetProfileForVehicle(veh)
     return nil
 end
 
-local function IsNonELSVehicle(veh)
-    if not veh or veh == 0 or not DoesEntityExist(veh) then return false end
-    local modelHash = GetEntityModel(veh)
-    local rawName = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
+local function BuildNonELSHashMap()
+    nonELSModelHashMap = {}
+    if not (Config and Config.ELS and Config.ELS.NonELSVehicles) then return end
 
-    if Config and Config.ELS and Config.ELS.NonELSVehicles then
-        if Config.ELS.NonELSVehicles[rawName] or Config.ELS.NonELSVehicles[modelHash] then
-            return true
-        end
-
-        -- Check spawn names / custom keys by hash or matching string
-        for name, isNonEls in pairs(Config.ELS.NonELSVehicles) do
-            if isNonEls then
-                local cleanName = string.lower(tostring(name)):gsub("^%s*(.-)%s*$", "%1")
-                if cleanName == rawName or GetHashKey(cleanName) == modelHash or GetHashKey(tostring(name)) == modelHash or tonumber(name) == modelHash then
-                    return true
-                end
+    for entry, enabled in pairs(Config.ELS.NonELSVehicles) do
+        if enabled then
+            if type(entry) == "number" then
+                nonELSModelHashMap[entry] = true
+            elseif type(entry) == "string" then
+                local trimmed = string.lower(entry):gsub("^%s*(.-)%s*$", "%1")
+                -- 1. Exact model hash of the spawn code string
+                nonELSModelHashMap[GetHashKey(trimmed)] = true
+                nonELSModelHashMap[joaat(trimmed)] = true
+                -- 2. Number string if entered as a hash
+                local num = tonumber(trimmed)
+                if num then nonELSModelHashMap[num] = true end
             end
         end
     end
+end
+
+local function IsNonELSVehicle(veh)
+    if not veh or veh == 0 or not DoesEntityExist(veh) then return false end
+    local modelHash = GetEntityModel(veh)
+
+    if not nonELSModelHashMap then
+        BuildNonELSHashMap()
+    end
+
+    if nonELSModelHashMap and nonELSModelHashMap[modelHash] then
+        return true
+    end
+
     return false
 end
 
