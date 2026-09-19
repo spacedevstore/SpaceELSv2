@@ -1,23 +1,67 @@
 {
     "2018 dodge": {
-        "alleyLeft": [],
-        "speed": 75,
-        "labels": [],
         "alleyRight": [],
-        "takedown": [],
+        "alleyLeft": [],
         "sirenBank": "VEHICLES_HORNS_SIREN_1",
         "stage1": {
+            "phaseB": [
+                9
+            ],
+            "steady": [
+                8
+            ],
+            "phaseA": [
+                7
+            ],
             "envColors": {
                 "colorB": "amber",
-                "pos": "rear",
-                "colorA": "amber"
+                "colorA": "amber",
+                "pos": "rear"
             },
+            "speed": 110
+        },
+        "labels": [],
+        "stage2": {
+            "phaseB": [
+                2
+            ],
+            "steady": [
+                10,
+                3,
+                4
+            ],
+            "phaseA": [
+                1
+            ],
+            "envColors": {
+                "colorB": "blue",
+                "colorA": "red",
+                "pos": "roof"
+            },
+            "speed": 120
+        },
+        "takedown": [],
+        "speed": 75
+    },
+    "sast1": {
+        "alleyRight": [],
+        "stage1": {
             "phaseB": [
                 8
             ],
             "steady": [],
-            "speed": 180,
-            "phaseA": []
-        }
+            "phaseA": [],
+            "envColors": {
+                "colorB": "amber",
+                "colorA": "amber",
+                "pos": "rear"
+            },
+            "speed": 180
+        },
+        "labels": [],
+        "sirenBank": "VEHICLES_HORNS_SIREN_1",
+        "alleyLeft": [],
+        "takedown": [],
+        "speed": 75
     }
 }

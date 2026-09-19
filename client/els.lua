@@ -83,15 +83,28 @@ local function GetProfileForVehicle(veh)
     end
 
     local rawName = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
+    local vehEntityState = Entity(veh).state
+    local stateSpawnCode = (vehEntityState and vehEntityState.spawnName) or (vehEntityState and vehEntityState.model)
 
     if customVehicleProfiles[rawName] then
         vehicleModelProfileCache[modelHash] = customVehicleProfiles[rawName]
         return customVehicleProfiles[rawName]
     end
 
+    if stateSpawnCode and customVehicleProfiles[string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1")] then
+        local prof = customVehicleProfiles[string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1")]
+        vehicleModelProfileCache[modelHash] = prof
+        return prof
+    end
+
     for name, prof in pairs(customVehicleProfiles) do
         local cleanKey = string.lower(tostring(name)):gsub("^%s*(.-)%s*$", "%1")
-        if cleanKey == rawName or GetHashKey(cleanKey) == modelHash or GetHashKey(name) == modelHash then
+        if cleanKey == rawName
+            or (stateSpawnCode and cleanKey == string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1"))
+            or GetHashKey(cleanKey) == modelHash
+            or joaat(cleanKey) == modelHash
+            or GetHashKey(name) == modelHash
+            or joaat(name) == modelHash then
             vehicleModelProfileCache[modelHash] = prof
             return prof
         end
@@ -842,6 +855,15 @@ local function OpenControlELS()
 
     local modelHash = GetEntityModel(veh)
     local rawModel = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
+    local vehEntityState = Entity(veh).state
+    local stateSpawnCode = (vehEntityState and vehEntityState.spawnName) or (vehEntityState and vehEntityState.model)
+    local activeModelName = (stateSpawnCode and tostring(stateSpawnCode)) or rawModel
+
+    local modelDisplayName = GetLabelText(GetDisplayNameFromVehicleModel(modelHash))
+    if modelDisplayName == "NULL" or not modelDisplayName then
+        modelDisplayName = GetDisplayNameFromVehicleModel(modelHash)
+    end
+
     local installedExtras = {}
     for i = 1, 12 do
         if DoesExtraExist(veh, i) == 1 or DoesExtraExist(veh, i) == true then
@@ -856,7 +878,8 @@ local function OpenControlELS()
     SendNUIMessage({
         action = 'openBuilder',
         data = {
-            modelName = rawModel,
+            modelName = string.lower(activeModelName):gsub("^%s*(.-)%s*$", "%1"),
+            labelName = modelDisplayName,
             installedExtras = installedExtras,
             profile = GetProfileForVehicle(veh)
         }

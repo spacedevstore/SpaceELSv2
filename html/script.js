@@ -212,7 +212,8 @@ window.addEventListener('message', (event) => {
 });
 
 const builderContainer = document.getElementById('builder-container');
-const builderModelName = document.getElementById('builder-model-name');
+const builderModelInput = document.getElementById('builder-model-input');
+const builderModelDisplay = document.getElementById('builder-model-display');
 const builderStatusText = document.getElementById('builder-status-text');
 const stg3SpeedSlider = document.getElementById('stg3-speed-slider');
 const stg3SpeedVal = document.getElementById('stg3-speed-val');
@@ -282,7 +283,14 @@ function switchStudioTab(tabId) {
 
 function openBuilderUI(data) {
     currentEditingModel = (data.modelName || "police").toLowerCase();
-    builderModelName.textContent = currentEditingModel.toUpperCase();
+    if (builderModelInput) {
+        builderModelInput.value = currentEditingModel;
+    }
+    if (builderModelDisplay) {
+        const displayName = data.labelName || data.modelName || "Cruiser";
+        builderModelDisplay.textContent = displayName.toUpperCase();
+        builderModelDisplay.style.display = displayName ? 'inline-block' : 'none';
+    }
     vehicleInstalledExtras = data.installedExtras || [];
 
     if (data.profile) {
@@ -603,19 +611,21 @@ function updateTestBtnStyles(activeBtnId) {
 }
 
 document.getElementById('builder-btn-save')?.addEventListener('click', () => {
+    const targetModel = (builderModelInput ? builderModelInput.value.trim().toLowerCase() : currentEditingModel) || currentEditingModel;
     postNUI('builderSaveProfile', {
-        modelName: currentEditingModel,
+        modelName: targetModel,
         profile: workingProfile
     });
-    builderStatusText.textContent = `✔ Profile successfully saved for [${currentEditingModel.toUpperCase()}]!`;
+    builderStatusText.textContent = `✔ Profile successfully saved for [${targetModel.toUpperCase()}]!`;
     setTimeout(() => {
         closeBuilderUI();
     }, 900);
 });
 
 document.getElementById('builder-btn-reset')?.addEventListener('click', () => {
-    postNUI('builderResetProfile', { modelName: currentEditingModel });
-    builderStatusText.textContent = `Reset to default template for [${currentEditingModel.toUpperCase()}].`;
+    const targetModel = (builderModelInput ? builderModelInput.value.trim().toLowerCase() : currentEditingModel) || currentEditingModel;
+    postNUI('builderResetProfile', { modelName: targetModel });
+    builderStatusText.textContent = `Reset to default template for [${targetModel.toUpperCase()}].`;
     setTimeout(() => {
         closeBuilderUI();
     }, 700);

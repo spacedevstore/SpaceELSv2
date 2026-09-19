@@ -125,7 +125,7 @@ RegisterNetEvent('SpaceELS:server:saveVehicleProfile', function(modelName, profi
 
     if not modelName or type(modelName) ~= 'string' or type(profileData) ~= 'table' then return end
     modelName = string.lower(modelName):gsub("^%s*(.-)%s*$", "%1")
-    if #modelName == 0 or #modelName > 50 or modelName:match('[^%w_%-]') then
+    if #modelName == 0 or #modelName > 50 or modelName:match('[^%w_%-%s]') then
         return
     end
 
@@ -143,7 +143,7 @@ RegisterNetEvent('SpaceELS:server:resetVehicleProfile', function(modelName)
 
     if not modelName or type(modelName) ~= 'string' then return end
     modelName = string.lower(modelName):gsub("^%s*(.-)%s*$", "%1")
-    if #modelName == 0 or #modelName > 50 or modelName:match('[^%w_%-]') then
+    if #modelName == 0 or #modelName > 50 or modelName:match('[^%w_%-%s]') then
         return
     end
 

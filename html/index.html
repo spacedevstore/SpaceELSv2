@@ -62,7 +62,11 @@
         <div class="b-top-bar">
             <div class="b-top-left">
                 <div class="b-brand-badge"><i class="fa-solid fa-sliders"></i> ELS STUDIO</div>
-                <div class="b-model-tag">VEHICLE: <span id="builder-model-name" class="highlight-model">POLICE</span></div>
+                <div class="b-model-input-wrap">
+                    <label for="builder-model-input" class="b-model-input-lbl">SPAWN CODE:</label>
+                    <input type="text" id="builder-model-input" class="b-model-input" placeholder="e.g. sast1" maxlength="32" spellcheck="false" autocomplete="off">
+                    <span id="builder-model-display" class="b-model-display-badge" title="Vehicle Display Label"></span>
+                </div>
             </div>
 
             <div class="b-top-tabs" id="studio-top-tabs">
