@@ -1,9 +1,13 @@
 {
-    "2018 dodge": {
-        "alleyRight": [],
+    "sast1": {
+        "labels": [],
         "alleyLeft": [],
         "sirenBank": "VEHICLES_HORNS_SIREN_1",
+        "alleyRight": [],
+        "takedown": [],
+        "speed": 75,
         "stage1": {
+            "speed": 120,
             "phaseB": [
                 9
             ],
@@ -14,54 +18,26 @@
                 7
             ],
             "envColors": {
-                "colorB": "amber",
                 "colorA": "amber",
+                "colorB": "amber",
                 "pos": "rear"
-            },
-            "speed": 110
+            }
         },
-        "labels": [],
         "stage2": {
+            "speed": 120,
             "phaseB": [
-                2
-            ],
-            "steady": [
-                10,
-                3,
                 4
             ],
-            "phaseA": [
-                1
-            ],
-            "envColors": {
-                "colorB": "blue",
-                "colorA": "red",
-                "pos": "roof"
-            },
-            "speed": 120
-        },
-        "takedown": [],
-        "speed": 75
-    },
-    "sast1": {
-        "alleyRight": [],
-        "stage1": {
-            "phaseB": [
-                8
-            ],
             "steady": [],
-            "phaseA": [],
+            "phaseA": [
+                1,
+                2
+            ],
             "envColors": {
-                "colorB": "amber",
-                "colorA": "amber",
-                "pos": "rear"
-            },
-            "speed": 180
-        },
-        "labels": [],
-        "sirenBank": "VEHICLES_HORNS_SIREN_1",
-        "alleyLeft": [],
-        "takedown": [],
-        "speed": 75
+                "colorA": "red",
+                "colorB": "blue",
+                "pos": "roof"
+            }
+        }
     }
 }

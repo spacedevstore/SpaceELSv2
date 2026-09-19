@@ -39,7 +39,43 @@ local isInVehicle = false
 local canControlCurrentVeh = false
 local vehicleModelProfileCache = {}
 local vehicleEmergencyCache = {}
+local vehicleSpawnCodeCache = {}
 local nonELSModelHashMap = nil
+
+local function GetVehicleSpawnCode(veh)
+    if not veh or veh == 0 or not DoesEntityExist(veh) then return nil end
+    local modelHash = GetEntityModel(veh)
+    if vehicleSpawnCodeCache[modelHash] then
+        return vehicleSpawnCodeCache[modelHash]
+    end
+
+    local vehEntityState = Entity(veh).state
+    local stateSpawnCode = (vehEntityState and vehEntityState.spawnName) or (vehEntityState and vehEntityState.model)
+    if stateSpawnCode and tostring(stateSpawnCode) ~= "" then
+        local clean = string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1")
+        vehicleSpawnCodeCache[modelHash] = clean
+        return clean
+    end
+
+    -- Query FiveM's registered vehicle models to find the real spawn name for this model hash
+    if GetAllVehicleModels then
+        local allModels = GetAllVehicleModels()
+        if type(allModels) == "table" then
+            for _, modelName in ipairs(allModels) do
+                if joaat(modelName) == modelHash or GetHashKey(modelName) == modelHash then
+                    local foundName = string.lower(tostring(modelName)):gsub("^%s*(.-)%s*$", "%1")
+                    vehicleSpawnCodeCache[modelHash] = foundName
+                    return foundName
+                end
+            end
+        end
+    end
+
+    -- Fallback to display name if not found in registered models list
+    local fallback = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
+    vehicleSpawnCodeCache[modelHash] = fallback
+    return fallback
+end
 
 local ENV_COLOR_PALETTES = {
     red   = { r = 210, g = 15,  b = 25 },
@@ -82,25 +118,23 @@ local function GetProfileForVehicle(veh)
         return vehicleModelProfileCache[modelHash] == false and nil or vehicleModelProfileCache[modelHash]
     end
 
+    local spawnCode = GetVehicleSpawnCode(veh)
     local rawName = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
-    local vehEntityState = Entity(veh).state
-    local stateSpawnCode = (vehEntityState and vehEntityState.spawnName) or (vehEntityState and vehEntityState.model)
+
+    if spawnCode and customVehicleProfiles[spawnCode] then
+        vehicleModelProfileCache[modelHash] = customVehicleProfiles[spawnCode]
+        return customVehicleProfiles[spawnCode]
+    end
 
     if customVehicleProfiles[rawName] then
         vehicleModelProfileCache[modelHash] = customVehicleProfiles[rawName]
         return customVehicleProfiles[rawName]
     end
 
-    if stateSpawnCode and customVehicleProfiles[string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1")] then
-        local prof = customVehicleProfiles[string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1")]
-        vehicleModelProfileCache[modelHash] = prof
-        return prof
-    end
-
     for name, prof in pairs(customVehicleProfiles) do
         local cleanKey = string.lower(tostring(name)):gsub("^%s*(.-)%s*$", "%1")
-        if cleanKey == rawName
-            or (stateSpawnCode and cleanKey == string.lower(tostring(stateSpawnCode)):gsub("^%s*(.-)%s*$", "%1"))
+        if (spawnCode and cleanKey == spawnCode)
+            or cleanKey == rawName
             or GetHashKey(cleanKey) == modelHash
             or joaat(cleanKey) == modelHash
             or GetHashKey(name) == modelHash
@@ -854,10 +888,7 @@ local function OpenControlELS()
     if IsNonELSVehicle(veh) then return end
 
     local modelHash = GetEntityModel(veh)
-    local rawModel = string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
-    local vehEntityState = Entity(veh).state
-    local stateSpawnCode = (vehEntityState and vehEntityState.spawnName) or (vehEntityState and vehEntityState.model)
-    local activeModelName = (stateSpawnCode and tostring(stateSpawnCode)) or rawModel
+    local activeModelName = GetVehicleSpawnCode(veh) or string.lower(GetDisplayNameFromVehicleModel(modelHash)):gsub("^%s*(.-)%s*$", "%1")
 
     local modelDisplayName = GetLabelText(GetDisplayNameFromVehicleModel(modelHash))
     if modelDisplayName == "NULL" or not modelDisplayName then
